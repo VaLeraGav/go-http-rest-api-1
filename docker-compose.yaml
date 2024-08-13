@@ -1,16 +1,27 @@
-version: "3.9"
+version: '3.8'
 services:
   postgres:
-    image: postgres:14.8-alpine3.18
+    image: postgres
+    container_name: postgres-container
     environment:
-      POSTGRES_DB: "restapi_dev_1"
-      POSTGRES_USER: "user"
-      POSTGRES_PASSWORD: "pass"
-      PGDATA: "/var/lib/postgresql/data/pgdata"
-    volumes:
-      - project-1-data:/var/lib/postgresql/data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_restapi-dev:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate:v4.16.2
+    command: >
+      -source 'file:///migrations'
+      -database 'postgresql://postgres:yourpassword@postgres:5432/${DB_NAME}?sslmode=disable' up
+    depends_on:
+      - postgres
+    volumes:
+      - ./migrations:/migrations:ro
 
 volumes:
-  project-1-data:
+  postgres_restapi-dev:
+
