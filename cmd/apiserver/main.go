@@ -13,6 +13,7 @@ var (
 )
 
 func init() {
+	// $ ./apiserver -h
 	flag.StringVar(&configPath, "config-path", "configs/apiserver.toml", "path to config file")
 }
 
@@ -24,7 +25,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	s := apiserver.New(config)
 	if err := s.Start(); err != nil {
 		log.Fatal(err)
