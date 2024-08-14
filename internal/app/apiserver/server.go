@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/VaLeraGav/go-http-rest-api-1/internal/app/model"
 	"github.com/VaLeraGav/go-http-rest-api-1/internal/app/store"
@@ -54,6 +55,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) configureRouting() {
 	s.router.Use(s.setRequestID)
+	s.router.Use(s.logRequest)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
 	s.router.HandleFunc("/users", s.handelUserCreate()).Methods("POST")
@@ -93,6 +95,41 @@ func (s *server) setRequestID(next http.Handler) http.Handler {
 		id := uuid.New().String()
 		w.Header().Set("X-Request-ID", id)
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKeyRequestID, id)))
+	})
+}
+
+func (s *server) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := s.logger.WithFields(logrus.Fields{
+			"remote_addr": r.RemoteAddr,
+			"request_id":  r.Context().Value(ctxKeyRequestID),
+		})
+		logger.Infof("started %s %s", r.Method, r.RequestURI)
+
+		start := time.Now()
+
+		// преопределили
+		rw := &responseWriter{w, http.StatusOK}
+
+		// http.ResponseWriter - передаем интерфес и он не имеет доступа к коду ответа
+		next.ServeHTTP(rw, r)
+
+		var level logrus.Level
+		switch {
+		case rw.code >= 500:
+			level = logrus.ErrorLevel
+		case rw.code >= 400:
+			level = logrus.WarnLevel
+		default:
+			level = logrus.InfoLevel
+		}
+		logger.Logf(
+			level,
+			"completed with %d %s in %v",
+			rw.code,
+			http.StatusText(rw.code),
+			time.Now().Sub(start),
+		)
 	})
 }
 
