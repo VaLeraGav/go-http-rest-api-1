@@ -1,25 +1,47 @@
 package main
 
 import (
-	"database/sql"
+	"encoding/json"
 	"fmt"
-	"log"
-
-	_ "github.com/lib/pq"
 )
 
 func main() {
-	connStr := "user=postgres password=yourpassword dbname=restapi-dev host=localhost port=5432 sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
+	jsonStr := `{"name": "John", "age": 30, "is_student": false}`
+	var result map[string]interface{}
 
-	err = db.Ping()
+	err := json.Unmarshal([]byte(jsonStr), &result)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		return
 	}
 
-	fmt.Println("Успешно подключено к PostgreSQL!")
+	generateStruct(result)
+}
+
+func generateStruct(data map[string]interface{}) {
+	fmt.Println("type GeneratedStruct struct {")
+	for key, value := range data {
+		fmt.Printf("    %s %s `json:\"%s\"`\n", capitalize(key), goType(value), key)
+	}
+	fmt.Println("}")
+}
+
+func goType(value interface{}) string {
+	switch value.(type) {
+	case string:
+		return "string"
+	case float64:
+		return "int"
+	case bool:
+		return "bool"
+	default:
+		return "interface{}"
+	}
+}
+
+func capitalize(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	return string(s[0]-32) + s[1:] // Приводим к верхнему регистру
 }
