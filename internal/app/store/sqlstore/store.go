@@ -19,24 +19,6 @@ func New(db *sql.DB) *Store {
 	}
 }
 
-// func (s *Store) Open() error {
-// 	db, err := sql.Open("postgres", s.config.DatabaseURL)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if err := db.Ping(); err != nil {
-// 		return err
-// 	}
-
-// 	s.db = db
-// 	return nil
-// }
-
-// func (s *Store) Close() {
-// 	s.db.Close()
-// }
-
 func (s *Store) User() store.UserRepository {
 	if s.userRepository != nil {
 		return s.userRepository
