@@ -1,6 +1,7 @@
 package apiserver
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -13,11 +14,16 @@ import (
 )
 
 const (
-	sessionName = "auth_seesion_name"
+	sessionName        = "auth_seesion_name"
+	ctxKeyUser  ctxKey = iota
+	ctxKeyRequestID
 )
+
+type ctxKey int8
 
 var (
 	errIncorrectEmailOrPassword = errors.New("incorrect email or password")
+	errNotAuthenticated         = errors.New("not authenticated")
 )
 
 type server struct {
@@ -47,6 +53,34 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *server) configureRouting() {
 	s.router.HandleFunc("/users", s.handelUserCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
+
+	private := s.router.PathPrefix("/private").Subrouter()
+	private.Use(s.authenticateUser)
+	private.HandleFunc("/whoami", s.handleWhoami())
+}
+
+func (s *server) authenticateUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session, err := s.sessionStore.Get(r, sessionName)
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		id, ok := session.Values["user_id"]
+		if !ok {
+			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
+
+		u, err := s.store.User().Find(id.(int))
+		if err != nil {
+			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
+
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKeyUser, u)))
+	})
 }
 
 func (s *server) handelUserCreate() http.HandlerFunc {
@@ -110,6 +144,12 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 		}
 
 		s.respond(w, r, http.StatusOK, nil)
+	}
+}
+
+func (s *server) handleWhoami() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		s.respond(w, r, http.StatusOK, r.Context().Value(ctxKeyUser).(*model.User))
 	}
 }
 
