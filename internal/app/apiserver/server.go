@@ -141,7 +141,6 @@ func (s *server) handelUserCreate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &request{}
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -170,7 +169,6 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &request{}
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
