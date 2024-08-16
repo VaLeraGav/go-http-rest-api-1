@@ -1,18 +1,17 @@
 version: '3.8'
 services:
   postgres:
-    image: postgres:15.3-alpine3.18
+    image: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: yourpassword
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "54302:5432"
     volumes:
       - postgres_restapi-dev:/var/lib/postgresql/data
 
   migrate:
-    container_name: migrate
     image: migrate/migrate:v4.16.2
     command: >
       -source 'file:///migrations'

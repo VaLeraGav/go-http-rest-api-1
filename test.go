@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	connStr := "user=postgres password=yourpassword dbname=restapi-dev host=localhost port=5432 sslmode=disable"
+	connStr := "user=postgres password=yourpassword dbname=restapi-dev host=localhost port=54302 sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)

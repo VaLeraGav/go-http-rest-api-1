@@ -16,6 +16,7 @@ func Start(config *Config) error {
 	}
 
 	defer db.Close()
+
 	store := sqlstore.New(db)
 	sessionStore := sessions.NewCookieStore([]byte(config.SessionKey))
 	srv := newServer(store, sessionStore)
